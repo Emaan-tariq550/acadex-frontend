@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, GraduationCap, ClipboardList,
+  LayoutDashboard, GraduationCap, ClipboardList,
   Settings, LogOut, Menu, X, Bell, Sun, Moon, ChevronRight,
-  BookOpen, UserCog
+  UserCog
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -54,17 +54,14 @@ export default function DashboardLayout({ children }) {
     return location.pathname.startsWith(path);
   };
 
-  const Sidebar = ({ mobile = false }) => (
-    <aside style={{
-      width: mobile ? '100%' : '260px',
+  const SidebarContent = () => (
+    <div style={{
+      width: '260px',
       height: '100vh',
       background: 'var(--surface)',
       borderRight: '1px solid var(--border)',
       display: 'flex',
       flexDirection: 'column',
-      position: mobile ? 'relative' : 'fixed',
-      top: 0, left: 0,
-      zIndex: mobile ? 1 : 100,
       overflowY: 'auto',
     }}>
       {/* Logo */}
@@ -84,7 +81,7 @@ export default function DashboardLayout({ children }) {
             fontWeight: '700', color: 'white', fontSize: '18px'
           }}>A</div>
           <div>
-            <div style={{ fontWeight: '700', fontSize: '16px', letterSpacing: '-0.3px' }}>ACADEX</div>
+            <div style={{ fontWeight: '700', fontSize: '16px' }}>ACADEX</div>
             <div style={{
               fontSize: '11px', color: 'white',
               background: roleColor, borderRadius: '4px',
@@ -93,18 +90,26 @@ export default function DashboardLayout({ children }) {
             }}>{user?.role}</div>
           </div>
         </div>
-        {mobile && (
-          <button onClick={() => setSidebarOpen(false)}
-            style={{ background: 'none', color: 'var(--text-secondary)', padding: '4px' }}>
-            <X size={20} />
-          </button>
-        )}
+        {/* Mobile close button */}
+        <button
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--text-secondary)', padding: '4px',
+            display: 'none'
+          }}
+          className="sidebar-close-btn"
+        >
+          <X size={20} />
+        </button>
       </div>
 
       {/* Navigation */}
       <nav style={{ padding: '16px 12px', flex: 1 }}>
-        <div style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', 
-          textTransform: 'uppercase', letterSpacing: '0.8px', padding: '0 12px 8px' }}>
+        <div style={{
+          fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)',
+          textTransform: 'uppercase', letterSpacing: '0.8px', padding: '0 12px 8px'
+        }}>
           Navigation
         </div>
         {navItems.map(item => {
@@ -123,8 +128,6 @@ export default function DashboardLayout({ children }) {
                 fontWeight: active ? '600' : '400',
                 fontSize: '14px', transition: 'all 0.15s',
               }}
-              onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--surface-2)'; }}
-              onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
             >
               <Icon size={18} />
               <span style={{ flex: 1 }}>{item.label}</span>
@@ -135,9 +138,7 @@ export default function DashboardLayout({ children }) {
       </nav>
 
       {/* User section */}
-      <div style={{
-        padding: '16px', borderTop: '1px solid var(--border)'
-      }}>
+      <div style={{ padding: '16px', borderTop: '1px solid var(--border)' }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
           padding: '10px', borderRadius: '10px', background: 'var(--surface-2)',
@@ -146,18 +147,22 @@ export default function DashboardLayout({ children }) {
           <div style={{
             width: '36px', height: '36px', borderRadius: '50%',
             background: roleColor, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', color: 'white', fontWeight: '600', fontSize: '15px',
-            flexShrink: 0
+            justifyContent: 'center', color: 'white', fontWeight: '600',
+            fontSize: '15px', flexShrink: 0
           }}>
             {user?.name?.charAt(0)?.toUpperCase()}
           </div>
           <div style={{ overflow: 'hidden', flex: 1 }}>
-            <div style={{ fontWeight: '600', fontSize: '13px', 
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{
+              fontWeight: '600', fontSize: '13px',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+            }}>
               {user?.name}
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{
+              fontSize: '11px', color: 'var(--text-muted)',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+            }}>
               {user?.email}
             </div>
           </div>
@@ -168,62 +173,77 @@ export default function DashboardLayout({ children }) {
             width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
             padding: '10px 12px', borderRadius: '8px', background: 'none',
             color: 'var(--danger)', fontSize: '14px', fontWeight: '500',
-            transition: 'background 0.15s'
+            border: 'none', cursor: 'pointer'
           }}
-          onMouseEnter={e => e.currentTarget.style.background = '#ef444415'}
-          onMouseLeave={e => e.currentTarget.style.background = 'none'}
         >
           <LogOut size={16} />
           Logout
         </button>
       </div>
-    </aside>
+    </div>
   );
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      {/* Desktop Sidebar */}
-      <div style={{ display: 'none' }} className="desktop-sidebar">
-        <Sidebar />
+
+      {/* ✅ DESKTOP SIDEBAR - sirf desktop pe dikhay */}
+      <div className="desktop-only-sidebar">
+        <SidebarContent />
       </div>
 
-      {/* Always-visible desktop sidebar */}
-      <div style={{ width: '260px', flexShrink: 0 }}>
-        <div style={{ display: 'block' }}>
-          <Sidebar />
-        </div>
-      </div>
-
-      {/* Mobile overlay */}
+      {/* ✅ MOBILE SIDEBAR - overlay ke saath */}
       {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-            zIndex: 200, display: 'none'
-          }}
-          className="mobile-overlay"
-        />
+        <>
+          {/* Overlay */}
+          <div
+            onClick={() => setSidebarOpen(false)}
+            style={{
+              position: 'fixed', inset: 0,
+              background: 'rgba(0,0,0,0.5)',
+              zIndex: 300,
+            }}
+          />
+          {/* Sidebar */}
+          <div style={{
+            position: 'fixed', top: 0, left: 0,
+            zIndex: 400, height: '100vh',
+            boxShadow: '4px 0 20px rgba(0,0,0,0.2)'
+          }}>
+            <SidebarContent />
+          </div>
+        </>
       )}
 
       {/* Main content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+
         {/* Header */}
         <header style={{
           height: '64px', background: 'var(--surface)',
           borderBottom: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0 24px', position: 'sticky', top: 0, zIndex: 50
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 20px', position: 'sticky',
+          top: 0, zIndex: 50
         }}>
+          {/* Mobile menu button */}
           <button
             onClick={() => setSidebarOpen(true)}
-            style={{ background: 'none', color: 'var(--text-primary)', display: 'none' }}
             className="mobile-menu-btn"
+            style={{
+              background: 'none', border: 'none',
+              cursor: 'pointer', color: 'var(--text-primary)',
+              padding: '8px', borderRadius: '8px',
+              display: 'none'
+            }}
           >
             <Menu size={22} />
           </button>
 
-          <div style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)' }}>
+          <div style={{
+            fontSize: '16px', fontWeight: '600',
+            color: 'var(--text-primary)'
+          }}>
             {navItems.find(n => isActive(n.path))?.label || 'ACADEX'}
           </div>
 
@@ -234,7 +254,7 @@ export default function DashboardLayout({ children }) {
                 width: '36px', height: '36px', borderRadius: '8px',
                 background: 'var(--surface-2)', border: '1px solid var(--border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--text-secondary)'
+                color: 'var(--text-secondary)', cursor: 'pointer'
               }}
             >
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
@@ -243,7 +263,8 @@ export default function DashboardLayout({ children }) {
               width: '36px', height: '36px', borderRadius: '8px',
               background: 'var(--surface-2)', border: '1px solid var(--border)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--text-secondary)', position: 'relative'
+              color: 'var(--text-secondary)', cursor: 'pointer',
+              position: 'relative'
             }}>
               <Bell size={16} />
               <span style={{
@@ -256,16 +277,29 @@ export default function DashboardLayout({ children }) {
         </header>
 
         {/* Page content */}
-        <main style={{ flex: 1, padding: '24px', overflowX: 'hidden' }}>
+        <main style={{ flex: 1, padding: '20px', overflowX: 'hidden' }}>
           {children}
         </main>
       </div>
 
-      {/* Responsive CSS */}
+      {/* ✅ RESPONSIVE CSS */}
       <style>{`
+        /* Desktop - sidebar dikhao */
+        .desktop-only-sidebar {
+          display: flex;
+        }
+        .mobile-menu-btn {
+          display: none !important;
+        }
+
+        /* Mobile - sidebar chhupaao, menu button dikhao */
         @media (max-width: 768px) {
-          .mobile-menu-btn { display: flex !important; }
-          .mobile-overlay { display: block !important; }
+          .desktop-only-sidebar {
+            display: none !important;
+          }
+          .mobile-menu-btn {
+            display: flex !important;
+          }
         }
       `}</style>
     </div>
