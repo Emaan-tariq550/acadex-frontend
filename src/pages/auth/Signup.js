@@ -1,27 +1,53 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Shield } from 'lucide-react';
+import { User, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+
+// Password strength checker
+const checkPasswordStrength = (password) => {
+  const checks = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+  };
+  const passed = Object.values(checks).filter(Boolean).length;
+  return {
+    checks,
+    strength: passed <= 2 ? 'weak' : passed <= 4 ? 'medium' : 'strong',
+    score: passed
+  };
+};
 
 export default function Signup() {
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'student' });
   const [loading, setLoading] = useState(false);
+  const [showPass, setShowPass] = useState(false);
   const { signup } = useAuth();
   const navigate = useNavigate();
+
+  const passwordStrength = checkPasswordStrength(form.password);
+
+  const strengthColors = {
+    weak: '#ef4444',
+    medium: '#f59e0b',
+    strong: '#10b981'
+  };
 
   const handleChange = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (passwordStrength.score < 5) {
+      toast.error('Please use a stronger password!');
       return;
     }
     setLoading(true);
     try {
       const user = await signup(form);
-      toast.success(`Account created! Welcome, ${user.name}!`);
+      toast.success(`Welcome, ${user.name}!`);
       const dashMap = { admin: '/admin', teacher: '/teacher', student: '/student' };
       navigate(dashMap[user.role]);
     } catch (err) {
@@ -32,9 +58,9 @@ export default function Signup() {
   };
 
   const roles = [
-    { value: 'student', label: '🎓 Student', desc: 'View marks & attendance' },
-    { value: 'teacher', label: '👨‍🏫 Teacher', desc: 'Manage students & marks' },
-    { value: 'admin', label: '👨‍💼 Admin', desc: 'Full system access' },
+    { value: 'student', label: '🎓 Student' },
+    { value: 'teacher', label: '👨‍🏫 Teacher' },
+    { value: 'admin', label: '👨‍💼 Admin' },
   ];
 
   return (
@@ -54,7 +80,9 @@ export default function Signup() {
             fontSize: '24px', fontWeight: '800', color: 'white'
           }}>A</div>
           <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '6px' }}>Create Account</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Join ACADEX with your institutional email</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+            Use your institutional email (e.g. bscs23093@itu.edu.pk)
+          </p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -64,73 +92,128 @@ export default function Signup() {
               display: 'block', marginBottom: '8px' }}>Select Role</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
               {roles.map(r => (
-                <button
-                  key={r.value} type="button"
+                <button key={r.value} type="button"
                   onClick={() => setForm(p => ({ ...p, role: r.value }))}
                   style={{
                     padding: '12px 8px', borderRadius: '10px', textAlign: 'center',
                     border: `2px solid ${form.role === r.value ? 'var(--primary)' : 'var(--border)'}`,
-                    background: form.role === r.value ? 'var(--primary)15' : 'var(--surface-2)',
-                    cursor: 'pointer', transition: 'all 0.15s'
-                  }}
-                >
-                  <div style={{ fontSize: '16px', marginBottom: '2px' }}>{r.label.split(' ')[0]}</div>
-                  <div style={{ fontSize: '11px', fontWeight: '600', color: form.role === r.value ? 'var(--primary)' : 'var(--text-secondary)' }}>
-                    {r.label.split(' ').slice(1).join(' ')}
-                  </div>
+                    background: form.role === r.value ? '#6366f115' : 'var(--surface-2)',
+                    cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                    color: form.role === r.value ? 'var(--primary)' : 'var(--text-secondary)'
+                  }}>
+                  {r.label}
                 </button>
               ))}
             </div>
           </div>
 
           {/* Name */}
-          {[
-            { name: 'name', label: 'Full Name', type: 'text', icon: User, placeholder: 'John Smith' },
-            { name: 'email', label: 'Institutional Email', type: 'email', icon: Mail, placeholder: 'you@university.edu' },
-            { name: 'password', label: 'Password', type: 'password', icon: Lock, placeholder: 'Min. 6 characters' },
-          ].map(field => {
-            const Icon = field.icon;
-            return (
-              <div key={field.name} style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)',
-                  display: 'block', marginBottom: '6px' }}>{field.label}</label>
-                <div style={{ position: 'relative' }}>
-                  <Icon size={15} style={{
-                    position: 'absolute', left: '13px', top: '50%',
-                    transform: 'translateY(-50%)', color: 'var(--text-muted)'
-                  }} />
-                  <input
-                    name={field.name} type={field.type}
-                    value={form[field.name]} onChange={handleChange}
-                    placeholder={field.placeholder} required
-                    style={{
-                      width: '100%', padding: '10px 14px 10px 40px',
-                      border: '1px solid var(--border)', borderRadius: '9px',
-                      background: 'var(--surface)', color: 'var(--text-primary)',
-                      fontSize: '14px', outline: 'none'
-                    }}
-                  />
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)',
+              display: 'block', marginBottom: '6px' }}>Full Name</label>
+            <div style={{ position: 'relative' }}>
+              <User size={15} style={{ position: 'absolute', left: '13px', top: '50%',
+                transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input name="name" value={form.name} onChange={handleChange}
+                placeholder="John Smith" required
+                style={{ width: '100%', padding: '10px 14px 10px 40px',
+                  border: '1px solid var(--border)', borderRadius: '9px',
+                  background: 'var(--surface)', color: 'var(--text-primary)',
+                  fontSize: '14px', outline: 'none' }} />
+            </div>
+          </div>
+
+          {/* Email */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)',
+              display: 'block', marginBottom: '6px' }}>Institutional Email</label>
+            <div style={{ position: 'relative' }}>
+              <Mail size={15} style={{ position: 'absolute', left: '13px', top: '50%',
+                transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input name="email" type="email" value={form.email} onChange={handleChange}
+                placeholder="bscs23093@itu.edu.pk" required
+                style={{ width: '100%', padding: '10px 14px 10px 40px',
+                  border: '1px solid var(--border)', borderRadius: '9px',
+                  background: 'var(--surface)', color: 'var(--text-primary)',
+                  fontSize: '14px', outline: 'none' }} />
+            </div>
+          </div>
+
+          {/* Password with strength indicator */}
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)',
+              display: 'block', marginBottom: '6px' }}>Password</label>
+            <div style={{ position: 'relative' }}>
+              <Lock size={15} style={{ position: 'absolute', left: '13px', top: '50%',
+                transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input name="password" type={showPass ? 'text' : 'password'}
+                value={form.password} onChange={handleChange}
+                placeholder="Min 8 chars, uppercase, number, special" required
+                style={{ width: '100%', padding: '10px 40px 10px 40px',
+                  border: '1px solid var(--border)', borderRadius: '9px',
+                  background: 'var(--surface)', color: 'var(--text-primary)',
+                  fontSize: '14px', outline: 'none' }} />
+              <button type="button" onClick={() => setShowPass(p => !p)}
+                style={{ position: 'absolute', right: '12px', top: '50%',
+                  transform: 'translateY(-50%)', background: 'none', border: 'none',
+                  cursor: 'pointer', color: 'var(--text-muted)', fontSize: '12px' }}>
+                {showPass ? 'Hide' : 'Show'}
+              </button>
+            </div>
+
+            {/* Password strength bar */}
+            {form.password && (
+              <div style={{ marginTop: '8px' }}>
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
+                  {[1,2,3,4,5].map(i => (
+                    <div key={i} style={{
+                      flex: 1, height: '4px', borderRadius: '999px',
+                      background: i <= passwordStrength.score
+                        ? strengthColors[passwordStrength.strength]
+                        : 'var(--border)',
+                      transition: 'all 0.2s'
+                    }} />
+                  ))}
+                </div>
+                <div style={{ fontSize: '12px', color: strengthColors[passwordStrength.strength],
+                  fontWeight: '500', textTransform: 'capitalize', marginBottom: '6px' }}>
+                  {passwordStrength.strength} password
+                </div>
+                {/* Requirements checklist */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                  {[
+                    { key: 'length', label: '8+ characters' },
+                    { key: 'uppercase', label: 'Uppercase (A-Z)' },
+                    { key: 'lowercase', label: 'Lowercase (a-z)' },
+                    { key: 'number', label: 'Number (0-9)' },
+                    { key: 'special', label: 'Special (!@#$)' },
+                  ].map(req => (
+                    <div key={req.key} style={{ display: 'flex', alignItems: 'center', gap: '4px',
+                      fontSize: '11px', color: passwordStrength.checks[req.key] ? '#10b981' : 'var(--text-muted)' }}>
+                      <span>{passwordStrength.checks[req.key] ? '✅' : '⬜'}</span>
+                      {req.label}
+                    </div>
+                  ))}
                 </div>
               </div>
-            );
-          })}
+            )}
+          </div>
 
-          <button
-            type="submit" disabled={loading}
+          <button type="submit" disabled={loading || passwordStrength.score < 5}
             style={{
               width: '100%', padding: '12px',
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: 'white', borderRadius: '10px', fontWeight: '600',
-              fontSize: '15px', marginTop: '8px',
+              background: passwordStrength.score < 5
+                ? 'var(--border)'
+                : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              color: passwordStrength.score < 5 ? 'var(--text-muted)' : 'white',
+              borderRadius: '10px', fontWeight: '600', fontSize: '15px',
+              border: 'none', cursor: passwordStrength.score < 5 ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-            }}
-          >
-            {loading && <span style={{
-              width: '16px', height: '16px', border: '2px solid white',
+            }}>
+            {loading && <span style={{ width: '16px', height: '16px', border: '2px solid white',
               borderTopColor: 'transparent', borderRadius: '50%',
-              animation: 'spin 0.6s linear infinite'
-            }} />}
-            {loading ? 'Creating Account...' : 'Create Account'}
+              animation: 'spin 0.6s linear infinite' }} />}
+            {loading ? 'Creating...' : 'Create Account'}
           </button>
         </form>
 
@@ -138,6 +221,13 @@ export default function Signup() {
           Already have an account?{' '}
           <Link to="/login" style={{ color: 'var(--primary)', fontWeight: '600' }}>Sign in</Link>
         </p>
+
+        <div style={{ marginTop: '16px', padding: '12px', borderRadius: '10px',
+          background: 'var(--surface-2)', border: '1px solid var(--border)',
+          fontSize: '12px', color: 'var(--text-muted)' }}>
+          <strong style={{ color: 'var(--text-secondary)' }}>Allowed domains:</strong>
+          <br />itu.edu.pk • nust.edu.pk • uet.edu.pk • lums.edu.pk • university.edu
+        </div>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
